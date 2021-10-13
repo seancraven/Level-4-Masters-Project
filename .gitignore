@@ -127,3 +127,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+##myfiles 
+Regression_House_Prices_Kaggle/test.csv
+Regression_House_Prices_Kaggle/train.csv
