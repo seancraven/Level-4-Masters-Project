@@ -3,8 +3,11 @@ from tensorflow import keras
 from tensorflow.keras import layers 
 from tensorflow.keras import models 
 import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd
+
+def data_normaliser(data):
+    mean = np.mean(data, axis = 0)
+    std = np.std(data,axis = 0)
+    return (data -mean)/std 
 
 #### Hey Sexy Boi This iscommon class/ functions notebook to call out of so that ecerything is easily accessible
 
