@@ -9,7 +9,7 @@ def data_normaliser(data):
     std = np.std(data,axis = 0)
     return (data -mean)/std 
 
-#### Hey Sexy Boi This iscommon class/ functions notebook to call out of so that ecerything is easily accessible
+####  This iscommon class/ functions notebook to call out of so that ecerything is easily accessible
 
 class network():
     def __init__(self,train_x,train_y,val_x,val_y, layer_shapes, optimizer = 'Adam', ):
