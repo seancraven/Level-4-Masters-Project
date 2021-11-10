@@ -37,16 +37,17 @@ class network():
 
 #### I fucking Hate How many hyperparameters there are 
 class trained_network(network):
-    def __init__(self,train_x,train_y,val_x,val_y, layer_shapes, optimizer = 'Adam', verbose = 0,epochs = 100):
+    def __init__(self,train_x,train_y,val_x,val_y, layer_shapes, optimizer = 'Adam', verbose = 0,epochs = 100,batch_size = 32):
         super().__init__(train_x,train_y,val_x,val_y, layer_shapes, optimizer)
         #print(layer_shapes)
         super().build()
         self.verbose  = verbose
         self.epochs = epochs 
+        self.batch_size = batch_size
         network = self.build()
         
         def fit(self,net):
-            net_hist = net.fit( self.train_x, self.train_y, validation_data = (self.val_x,self.val_y), verbose  = self.verbose, epochs = self.epochs, use_multiprocessing = True)
+            net_hist = net.fit( self.train_x, self.train_y, validation_data = (self.val_x,self.val_y), verbose  = self.verbose, epochs = self.epochs, use_multiprocessing = True,batch_size = self.batch_size)
             return net_hist
         self.history = fit(self,network).history 
         
