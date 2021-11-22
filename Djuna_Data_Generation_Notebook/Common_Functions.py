@@ -12,7 +12,7 @@ def data_normaliser(data):
 ####  This iscommon class/ functions notebook to call out of so that ecerything is easily accessible
 
 class network():
-    def __init__(self,train_x,train_y,val_x,val_y, layer_shapes, optimizer = 'Adam', ):
+    def __init__(self,train_x,train_y,val_x,val_y, layer_shapes, optimizer = 'Adam'):
         self.train_x = train_x
         self.train_y = train_y
         self.val_x = val_x
@@ -23,12 +23,14 @@ class network():
         #print(self.layer_shapes)
         model = models.Sequential()
         ##Layers 
+        #print(self.train_x.shape[1])
+    
         model.add(layers.Dense(self.layer_shapes[0],activation= 'relu',input_shape = (self.train_x.shape[1],)))
         for i in range(1,len(self.layer_shapes)):
             #print(i)
             model.add(layers.Dense(self.layer_shapes[i],activation = 'relu'))
         model.add(layers.Dense(1))
-        model.compile(optimizer = self.optimizer,loss = 'mse', metrics = ['mean_absolute_percentage_error'])
+        model.compile(optimizer = self.optimizer,loss = 'mse', metrics = [['mean_absolute_error'],['mean_absolute_percentage_error']])
         
         if model_summary:
             model.summary()
@@ -37,14 +39,14 @@ class network():
 
 #### I fucking Hate How many hyperparameters there are 
 class trained_network(network):
-    def __init__(self,train_x,train_y,val_x,val_y, layer_shapes, optimizer = 'Adam', verbose = 0,epochs = 100,batch_size = 32):
+    def __init__(self,train_x,train_y,val_x,val_y, layer_shapes, optimizer = 'Adam', verbose = 0,epochs = 30,batch_size = 32):
         super().__init__(train_x,train_y,val_x,val_y, layer_shapes, optimizer)
         #print(layer_shapes)
         super().build()
         self.verbose  = verbose
         self.epochs = epochs 
         self.batch_size = batch_size
-        network = self.build()
+        network = self.build(model_summary= False)
         
         def fit(self,net):
             net_hist = net.fit( self.train_x, self.train_y, validation_data = (self.val_x,self.val_y), verbose  = self.verbose, epochs = self.epochs, use_multiprocessing = True,batch_size = self.batch_size)
@@ -72,4 +74,7 @@ class plotter():
 
 
 ## Definin
-
+def exponetial_smoothing(array,smoothing_factor):
+    for i in range(1,len(array)):
+        array[i] = array[i]*smoothing_factor + array[i-1]*(1-smoothing_factor)
+    return array
