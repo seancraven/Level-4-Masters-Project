@@ -3,6 +3,8 @@ from tensorflow import keras
 from tensorflow.keras import layers 
 from tensorflow.keras import models 
 import numpy as np
+from tensorflow.compat.v1 import ConfigProto
+from tensorflow.compat.v1 import InteractiveSession
 
 def data_normaliser(data):
     mean = np.mean(data, axis = 0)
@@ -30,7 +32,7 @@ class network():
             #print(i)
             model.add(layers.Dense(self.layer_shapes[i],activation = 'relu'))
         model.add(layers.Dense(1))
-        model.compile(optimizer = self.optimizer,loss = 'mse', metrics = [['mean_absolute_error'],['mean_absolute_percentage_error']])
+        model.compile(optimizer = self.optimizer,loss = 'mape', metrics = [['mean_absolute_error'],['mean_absolute_percentage_error']])
         
         if model_summary:
             model.summary()
@@ -39,14 +41,15 @@ class network():
 
 #### I fucking Hate How many hyperparameters there are 
 class trained_network(network):
-    def __init__(self,train_x,train_y,val_x,val_y, layer_shapes, optimizer = 'Adam', verbose = 0,epochs = 30,batch_size = 32):
+    def __init__(self,train_x,train_y,val_x,val_y, layer_shapes, optimizer = 'Adam', verbose = 0,epochs = 30,batch_size = 32,model_summary = False):
         super().__init__(train_x,train_y,val_x,val_y, layer_shapes, optimizer)
         #print(layer_shapes)
         super().build()
         self.verbose  = verbose
         self.epochs = epochs 
         self.batch_size = batch_size
-        network = self.build(model_summary= False)
+        self.model_summary = model_summary
+        network = self.build(model_summary= self.model_summary)
         
         def fit(self,net):
             net_hist = net.fit( self.train_x, self.train_y, validation_data = (self.val_x,self.val_y), verbose  = self.verbose, epochs = self.epochs, use_multiprocessing = True,batch_size = self.batch_size)
@@ -78,3 +81,11 @@ def exponetial_smoothing(array,smoothing_factor):
     for i in range(1,len(array)):
         array[i] = array[i]*smoothing_factor + array[i-1]*(1-smoothing_factor)
     return array
+
+
+def reset():
+    config = ConfigProto()
+    config.gpu_options.allow_growth = True
+    session = InteractiveSession(config=config)
+    session.close()
+    print('Memory Reset')
