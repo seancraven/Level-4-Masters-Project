@@ -5,6 +5,7 @@ from tensorflow.keras import models
 import numpy as np
 from tensorflow.compat.v1 import ConfigProto
 from tensorflow.compat.v1 import InteractiveSession
+from scipy import stats
 
 def data_normaliser(data):
     mean = np.mean(data, axis = 0)
@@ -89,3 +90,15 @@ def reset():
     session = InteractiveSession(config=config)
     session.close()
     print('Memory Reset')
+
+def neg_grad_tester(val_array, array):
+    quart_length = int(len(val_array)/3)
+    #print(quart_length)
+    x = np.arange(len(val_array[:-quart_length]))
+    lin_reg_val = stats.linregress(x,val_array[:-quart_length])
+    lin_reg = stats.linregress(x,array[:-quart_length])
+   
+    if lin_reg_val.slope < lin_reg.slope*0.6:
+        return True
+    else:
+        return False
