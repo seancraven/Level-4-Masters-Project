@@ -27,10 +27,10 @@ class network():
         ##Layers 
         #print(self.train_x.shape[1])
     
-        model.add(layers.Dense(self.layer_shapes[0],activation= 'relu',input_shape = (self.train_x.shape[1],)))
+        model.add(layers.Dense(self.layer_shapes[0],activation= 'relu',input_shape = (self.train_x.shape[1],),kernel_initializer= 'he_normal'))
         for i in range(1,len(self.layer_shapes)):
             #print(i)
-            model.add(layers.Dense(self.layer_shapes[i],activation = 'relu'))
+            model.add(layers.Dense(self.layer_shapes[i],activation = 'relu',kernel_initializer= 'he_normal'))
         model.add(layers.Dense(1))
         model.compile(optimizer = self.optimizer,loss = 'mape', metrics = [['mean_absolute_error'],['mean_absolute_percentage_error']])
         
