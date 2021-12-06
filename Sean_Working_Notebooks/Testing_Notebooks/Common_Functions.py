@@ -15,13 +15,14 @@ def data_normaliser(data):
 ####  This iscommon class/ functions notebook to call out of so that ecerything is easily accessible
 
 class network():
-    def __init__(self,train_x,train_y,val_x,val_y, layer_shapes, optimizer = 'Adam'):
+    def __init__(self,train_x,train_y,val_x,val_y, layer_shapes, optimizer = 'Adam', callback  = 1):
         self.train_x = train_x
         self.train_y = train_y
         self.val_x = val_x
         self.val_y = val_y
         self.optimizer = optimizer
         self.layer_shapes = layer_shapes
+        self.callback = callback
     def build(self,model_summary = False):
         #print(self.layer_shapes)
         model = models.Sequential()
@@ -40,9 +41,12 @@ class network():
         
         return model
 
+def scheduler_dead(epoch,lr):
+    return lr
+
 #### I fucking Hate How many hyperparameters there are 
 class trained_network(network):
-    def __init__(self,train_x,train_y,val_x,val_y, layer_shapes, optimizer = 'Adam', verbose = 0,epochs = 30,batch_size = 32,model_summary = False):
+    def __init__(self,train_x,train_y,val_x,val_y, layer_shapes, optimizer = 'Adam', verbose = 0,epochs = 30,batch_size = 32,model_summary = False, callback = scheduler_dead):
         super().__init__(train_x,train_y,val_x,val_y, layer_shapes, optimizer)
         #print(layer_shapes)
         super().build()
@@ -50,6 +54,7 @@ class trained_network(network):
         self.epochs = epochs 
         self.batch_size = batch_size
         self.model_summary = model_summary
+        self.callback = callback
         network = self.build(model_summary= self.model_summary)
         
         def fit(self,net):
