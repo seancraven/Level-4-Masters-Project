@@ -15,7 +15,7 @@ def data_normaliser(data):
 ####  This iscommon class/ functions notebook to call out of so that ecerything is easily accessible
 
 class network():
-    def __init__(self,train_x,train_y,val_x,val_y, layer_shapes, optimizer = 'Adam', callback  = 1):
+    def __init__(self,train_x,train_y,val_x,val_y, layer_shapes, optimizer = 'Adam', callback  = 1 ):
         self.train_x = train_x
         self.train_y = train_y
         self.val_x = val_x
@@ -23,16 +23,17 @@ class network():
         self.optimizer = optimizer
         self.layer_shapes = layer_shapes
         self.callback = callback
-    def build(self,model_summary = False):
+
+    def build(self,model_summary = False, initializer = 'he_normal'):
         #print(self.layer_shapes)
         model = models.Sequential()
         ##Layers 
         #print(self.train_x.shape[1])
     
-        model.add(layers.Dense(self.layer_shapes[0],activation= 'relu',input_shape = (self.train_x.shape[1],),kernel_initializer= 'he_normal'))
+        model.add(layers.Dense(self.layer_shapes[0],activation= 'relu',input_shape = (self.train_x.shape[1],),kernel_initializer= initializer))
         for i in range(1,len(self.layer_shapes)):
             #print(i)
-            model.add(layers.Dense(self.layer_shapes[i],activation = 'relu',kernel_initializer= 'he_normal'))
+            model.add(layers.Dense(self.layer_shapes[i],activation = 'relu',kernel_initializer= initializer))
         model.add(layers.Dense(1))
         model.compile(optimizer = self.optimizer,loss = 'mape', metrics = [['mean_absolute_error'],['mean_absolute_percentage_error']])
         
@@ -46,7 +47,8 @@ def scheduler_dead(epoch,lr):
 
 #### I fucking Hate How many hyperparameters there are 
 class trained_network(network):
-    def __init__(self,train_x,train_y,val_x,val_y, layer_shapes, optimizer = 'Adam', verbose = 0,epochs = 30,batch_size = 32,model_summary = False, callback = scheduler_dead):
+    def __init__(self,train_x,train_y,val_x,val_y, layer_shapes, optimizer = 'Adam', verbose = 0,epochs = 30,batch_size = 32,model_summary = False, callback = scheduler_dead,initializer = 'he_normal'):
+
         super().__init__(train_x,train_y,val_x,val_y, layer_shapes, optimizer)
         #print(layer_shapes)
         super().build()
@@ -55,7 +57,8 @@ class trained_network(network):
         self.batch_size = batch_size
         self.model_summary = model_summary
         self.callback = callback
-        network = self.build(model_summary= self.model_summary)
+        self.initializer = initializer
+        network = self.build(model_summary= self.model_summary, initializer = self.initializer)
         
         def fit(self,net):
             net_hist = net.fit( self.train_x, self.train_y, validation_data = (self.val_x,self.val_y), verbose  = self.verbose, epochs = self.epochs, use_multiprocessing = True,batch_size = self.batch_size)
