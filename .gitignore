@@ -140,3 +140,6 @@ logs
 Cats
 *.csv
 /Worked_NN_Examples
+Hyperparam_Testing/Testing_Notebooks/*.h5
+Hyperparam_Testing/Testing_Notebooks/Testing_Data
+Hyperparam_Testing/Testing_Notebooks/Optimised_Network/Saved_Optimised_Networks

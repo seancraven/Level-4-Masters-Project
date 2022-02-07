@@ -1,19 +1,24 @@
+import sys
+sys.path.append('/home/sean/Documents/Work/Level 4/Level-4-Masters-Project/')
+
 import tensorflow as tf 
 from tensorflow import keras
 from tensorflow.keras import layers 
 from tensorflow.keras import models 
 import numpy as np
-from tensorflow.compat.v1 import ConfigProto
-from tensorflow.compat.v1 import InteractiveSession
+import Hyperparam_Testing.Testing_Notebooks.chirallag as cL
 from scipy import stats
-
+import matplotlib.pyplot as plt
+#Function which makes data 
+#mean 0 std 1
 def data_normaliser(data):
     mean = np.mean(data, axis = 0)
     std = np.std(data,axis = 0)
     return (data -mean)/std 
 
-####  This iscommon class/ functions notebook to call out of so that ecerything is easily accessible
 
+###Main class which shortens the variable network process 
+###network class builds a sequential network with a relu activ according to hyperparam arg 
 class network():
     def __init__(self,train_x,train_y,val_x,val_y, layer_shapes, optimizer = 'Adam', callback  = 1 ):
         self.train_x = train_x
@@ -25,14 +30,10 @@ class network():
         self.callback = callback
 
     def build(self,model_summary = False, initializer = 'he_normal'):
-        #print(self.layer_shapes)
+        
         model = models.Sequential()
-        ##Layers 
-        #print(self.train_x.shape[1])
-    
         model.add(layers.Dense(self.layer_shapes[0],activation= 'relu',input_shape = (self.train_x.shape[1],),kernel_initializer= initializer))
         for i in range(1,len(self.layer_shapes)):
-            #print(i)
             model.add(layers.Dense(self.layer_shapes[i],activation = 'relu',kernel_initializer= initializer))
         model.add(layers.Dense(1))
         model.compile(optimizer = self.optimizer,loss = 'mape', metrics = [['mean_absolute_error'],['mean_absolute_percentage_error']])
@@ -42,12 +43,9 @@ class network():
         
         return model
 
-def scheduler_dead(epoch,lr):
-    return lr
-
-#### I fucking Hate How many hyperparameters there are 
+#Trains the network 
 class trained_network(network):
-    def __init__(self,train_x,train_y,val_x,val_y, layer_shapes, optimizer = 'Adam', verbose = 0,epochs = 30,batch_size = 32,model_summary = False, callback = scheduler_dead,initializer = 'he_normal'):
+    def __init__(self,train_x,train_y,val_x,val_y, layer_shapes, optimizer = 'Adam', verbose = 0,epochs = 30,batch_size = 32,model_summary = False,initializer = 'he_normal'):
 
         super().__init__(train_x,train_y,val_x,val_y, layer_shapes, optimizer)
         #print(layer_shapes)
@@ -65,33 +63,25 @@ class trained_network(network):
             return net_hist
         self.history = fit(self,network).history 
         
-        
+#plot for layer testing        
 class plotter():
     def __init__(self, history):
         self.history = history
     def basic(self):
         mape = self.history['mean_absolute_percentage_error']
-        #percentageloss = 
         epochs = range(1,len(mape)+1) 
         plt.plot(epochs, mape)
     
-### What do I want out of this??
-#- Be able to vary shape of network easily 
-#- Output Basic plot for fast comparison
-#- Output History data for more in depth comparison 
-#- I would quite like to automate my testing, so say I pass list of [[3,36],[2.36]...etc] it runs and stores some measure of how good these were, often interpreting the data requires a graph so maybe it needs to plot a bunch of subplots
-#- Save Fig 
-#- Diff Optimisers 
 
 
 
-## Definin
+## Basic smoothing implementation
 def exponetial_smoothing(array,smoothing_factor):
     for i in range(1,len(array)):
         array[i] = array[i]*smoothing_factor + array[i-1]*(1-smoothing_factor)
     return array
 
-
+## Memory reset, having some problems with implementaion of keras
 def reset():
     config = ConfigProto()
     config.gpu_options.allow_growth = True
@@ -99,9 +89,9 @@ def reset():
     session.close()
     print('Memory Reset')
 
+##Determines if the gradient of the last third of the decay is less than loss
 def neg_grad_tester(val_array, array):
     quart_length = int(len(val_array)/3)
-    #print(quart_length)
     x = np.arange(len(val_array[:-quart_length]))
     lin_reg_val = stats.linregress(x,val_array[:-quart_length])
     lin_reg = stats.linregress(x,array[:-quart_length])
@@ -110,3 +100,41 @@ def neg_grad_tester(val_array, array):
         return True
     else:
         return False
+
+#Makes the data noisy inside the bounds of the co-ordinates
+def apply_noise(xs,noise_level):
+    xs = xs+np.random.normal(size = xs.shape, scale= noise_level)
+    xs[np.where(xs>1)] = 1
+    xs[np.where(xs<0)] = 0
+    return xs
+
+##Generates pion 16 fields on interval 0-1 raised to the 1/4 
+def gen_and_load(n_pred,n_val):
+    number_predictions= n_pred
+    N = 3
+    F0 = 1
+    gens = cL.gen_gellman(3)
+    pi=np.random.rand(number_predictions,N*N-1)**0.25
+    dpi=np.random.rand(number_predictions,N*N-1)**0.25
+    orig_V = abs(cL.get_V(pi,dpi,gens,F0).real)
+    output = np.hstack((pi,dpi,np.expand_dims(orig_V,axis=1)))
+    return [(output[:-n_val,:-1],output[:-n_val,-1]),(output[-n_val:,:-1],output[-n_val:,-1])]
+
+
+def field_plotter(pions,pots):
+    fig , ax = plt.subplots(2,8,sharey= True, figsize = (10,8))
+    plt.subplots_adjust(hspace= 0.4,wspace= 0.5)
+    for i in range(8):
+        ax[0,i].hist(pions[:,i], density = True, color = 'black') 
+        ax[0,i].set_xticks([0,1])
+        ax[1,i].set_xticks([0,1])
+        ax[1,i].hist(pions[:,8+i],density = True, color = 'black')
+        ax[0,i].set_xlabel('$\phi_{{{}}}$'.format(i))
+        ax[1,i].set_xlabel('$d\phi_{{{}}}$'.format(i))
+    fig.supylabel('Frequency Density')
+    fig_2 = plt.figure(figsize= (10,8))
+    plt.hist(pots,density= True, bins = 1000, color = 'black',label=  '$\phi \sim U^{1/4}$')
+    #plt.hist(df_pions[:,-1],density= True, bins = 1000, color = 'blue',label=  '$\phi \sim U^{1/4}$' )
+    plt.xlabel('$V(\phi)$')
+    plt.ylabel('Frequency Density')
+    plt.legend()
