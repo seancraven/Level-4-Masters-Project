@@ -45,7 +45,7 @@ class network():
 
 #Trains the network 
 class trained_network(network):
-    def __init__(self,train_x,train_y,val_x,val_y, layer_shapes, optimizer = 'Adam', verbose = 0,epochs = 30,batch_size = 32,model_summary = False,initializer = 'he_normal'):
+    def __init__(self,train_x,train_y,val_x,val_y, layer_shapes, optimizer = 'Adam', verbose = 0,epochs = 30,batch_size = 32,model_summary = False,initializer = 'he_normal',callback = 1):
 
         super().__init__(train_x,train_y,val_x,val_y, layer_shapes, optimizer)
         #print(layer_shapes)
