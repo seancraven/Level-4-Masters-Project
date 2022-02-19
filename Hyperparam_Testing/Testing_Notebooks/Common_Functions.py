@@ -109,7 +109,7 @@ def apply_noise(xs,noise_level):
     return xs
 
 ##Generates pion 16 fields on interval 0-1 raised to the 1/4 
-def gen_and_load(n_pred,n_val):
+def gen_and_load(n_pred,n_val, onearr = False):
     number_predictions= n_pred
     N = 3
     F0 = 1
@@ -118,7 +118,10 @@ def gen_and_load(n_pred,n_val):
     dpi=np.random.rand(number_predictions,N*N-1)**0.25
     orig_V = abs(cL.get_V(pi,dpi,gens,F0).real)
     output = np.hstack((pi,dpi,np.expand_dims(orig_V,axis=1)))
-    return [(output[:-n_val,:-1],output[:-n_val,-1]),(output[-n_val:,:-1],output[-n_val:,-1])]
+    if onearr:
+        return output
+    else:
+        return [(output[:-n_val,:-1],output[:-n_val,-1]),(output[-n_val:,:-1],output[-n_val:,-1])]
 
 
 def field_plotter(pions,pots):
