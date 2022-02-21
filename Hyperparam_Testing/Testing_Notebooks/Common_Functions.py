@@ -141,3 +141,51 @@ def field_plotter(pions,pots):
     plt.xlabel('$V(\phi)$')
     plt.ylabel('Frequency Density')
     plt.legend()
+
+
+##Functions to build Noisy Data Sets
+class noisy():
+    def __init__(self,sigma):
+        self.sigma = sigma
+    def keep_dims_with_cut(self,data,cutoff,buffer = 1.1):
+        #The Cutoff functionality removes data below the point 
+        #Running some fast tests There seems to be a reasonable amount of noise with the cutoff of the order 1% or so
+        #If i want a fully populated dataset
+        no_points =data.shape[0]
+        indexes = np.where(data[:,16]>0.1)
+        data = data[indexes]
+        fraction = data.shape[0]/no_points
+        #Math Found in Notebook Guassian_noise_trained_netowrk
+        no_points_to_gen = int(buffer*(1-fraction**2)/fraction*data.shape[0])
+        print('Training data cut for potential values below {}'.format(cutoff))
+        print('Remaining data fraction after cut  = {}'.format(fraction))
+        print('To retain {} training points generating {} more '.format(no_points,(no_points_to_gen)))
+        ##Repopulate the array
+        print('This produces {} usefull points'.format(data.shape[0]+int(no_points_to_gen*fraction)))
+        
+        
+        new_points = self.data(no_points_to_gen)
+        indexes = np.where(new_points[:,16]>0.1)
+        new_points_to_append = new_points[indexes]
+        output = np.vstack((data,new_points_to_append))
+        return output[:no_points]
+    
+    def data(self,number_predictions,cutoff = 0, keep_dim = True): #Define sigma globally 
+        N = 3
+        F0 = 1
+        #Get Generator Matricies 
+        gens = cL.gen_gellman(3)
+        #Generate Fields
+        pi=np.random.rand(number_predictions,N*N-1)**0.25
+        dpi=np.random.rand(number_predictions,N*N-1)**0.25
+        #Calculate V
+        orig_V = abs(cL.get_V(pi,dpi,gens,F0).real)
+        #Make the xvals noisey
+        pi = apply_noise(pi,self.sigma)
+        dpi = apply_noise(dpi,self.sigma)
+        output = np.hstack((pi,dpi,np.expand_dims(orig_V,axis=1)))
+        if keep_dim & (cutoff != 0):
+            output =  self.keep_dims_with_cut(output,cutoff)
+        return output
+
+    

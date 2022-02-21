@@ -1,47 +1,32 @@
 
+from importlib import import_module
 import sys 
 sys.path.append('/home/sean/Documents/Work/Level 4/Level-4-Masters-Project/')
 import tensorflow as tf 
 import numpy as np
 import matplotlib.pyplot as plt
-import pandas as pd
-
+import Hyperparam_Testing.Testing_Notebooks.Common_Functions as cf 
+from sklearn.model_selection import train_test_split as tts
 from tensorflow import keras
 from tensorflow.keras import layers 
 from tensorflow.keras import models 
-import os
-from keras.regularizers import l2
-import matplotlib
-from multiprocessing import Pool
-import Hyperparam_Testing.Testing_Notebooks.Common_Functions as cf 
-import Hyperparam_Testing.Testing_Notebooks.chirallag as cL
+import datetime
 
-matplotlib.rcParams.update({'legend.fontsize': 16})
-matplotlib.rcParams.update({'font.size': 16})
+time = datetime.datetime.now()
+time_string = time.strftime('%d_%m_%y')
 
-###Slight alteration on the previous function, I shouldnt code it like this in future make a function that generates data then train test split 
-def gen_and_load_noisy(n_pred,n_val,sigma):
-    number_predictions= n_pred
-    N = 3
-    F0 = 1
-    gens = cL.gen_gellman(3)
-    pi=np.random.rand(number_predictions,N*N-1)**0.25
-    dpi=np.random.rand(number_predictions,N*N-1)**0.25
-    orig_V = abs(cL.get_V(pi,dpi,gens,F0).real)
-    #Make the xvals noisey
-    pi = cf.apply_noise(pi,sigma)
-    dpi = cf.apply_noise(dpi,sigma)
-    output = np.hstack((pi,dpi,np.expand_dims(orig_V,axis=1)))
-    
-    return [(output[:-n_val,:-1],output[:-n_val,-1]),(output[-n_val:,:-1],output[-n_val:,-1])]
-
-points  =10**7
-val_points = 10**5
+points =10**3
 sigma = 0.03
-data = gen_and_load_noisy(points,val_points,sigma)
-train_x ,train_y = data[0]
-val_x,val_y = data[1]
+cutoff = 0.1
+#Gen Data
+data = cf.noisy(sigma).data(points,cutoff = cutoff)
+#Split to input output 
+x,y = data[:,:16],data[:,16]
+train_x, val_x, train_y, val_y =  tts(x,y,test_size = 0.1)
 
+power = np.log10(len(y))
+
+#build model
 opt = keras.optimizers.Adam(beta_1= 0.9, beta_2= 0.98)
 
 
@@ -59,11 +44,16 @@ model.summary()
 
 epoch_num = 100
 
+#fit model
+fname = './10{}datapoints_noise_{}_cutoff_{}'.format(power,sigma,cutoff)+'_date'+time_string+'_best_cp_.h5'
+#best model callback
+checkpoint = tf.keras.callbacks.ModelCheckpoint(fname,save_best_only=True)
+history = model.fit(train_x,train_y,validation_data=(val_x,val_y),batch_size= 32 , epochs = epoch_num,callbacks = [checkpoint])
+#save model
 
-history = model.fit(train_x,train_y,validation_data=(val_x,val_y),batch_size= 32 , epochs = epoch_num)
+fname = './10{}datapoints_noise_{}_cutoff_{}'.format(power,sigma,cutoff)+'_date'+time_string+'.h5'
+model.save(fname)
 
-model.save('./5_10{}datapoints_noise_{}.h5'.format((np.log10(train_y.shape[0]+val_y.shape[0])),sigma))
-
-mape = history.history['val_mean_absolute_percentage_error']
-print('Best Network Mape with {} points and noise $\sigma = {}$: {}'.format(points,sigma,mape))
+mape = history.history['val_loss']
+print('Best Network Mape with {} points and noise $\sigma = {}$: {}'.format(points,sigma,np.min(mape)))
 
