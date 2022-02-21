@@ -136,10 +136,13 @@ Reports
 Figures
 Djuna_Data_Generation_Notebook/*.csv
 Kaggle
-logs
+Logs
 Cats
-*.csv
-/Worked_NN_Examples
+Training_Data
+Worked_NN_Examples
 Hyperparam_Testing/Testing_Notebooks/*.h5
 Hyperparam_Testing/Testing_Notebooks/Testing_Data
 Hyperparam_Testing/Testing_Notebooks/Optimised_Network/Saved_Optimised_Networks
+Symmetry_Detection/*.jpeg
+*.csv
+Data_Training
