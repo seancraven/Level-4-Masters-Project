@@ -15,7 +15,7 @@ import datetime
 time = datetime.datetime.now()
 time_string = time.strftime('%d_%m_%y')
 
-points =10**3
+points =10**7
 sigma = 0.03
 cutoff = 0.1
 #Gen Data
@@ -45,15 +45,21 @@ model.summary()
 epoch_num = 100
 
 #fit model
-fname = './10{}datapoints_noise_{}_cutoff_{}'.format(power,sigma,cutoff)+'_date'+time_string+'_best_cp_.h5'
+fname = './Saved_Optimised_Networks/10{}datapoints_noise_{}_cutoff_{}'.format(power,sigma,cutoff)+'_date'+time_string+'_best_cp_.h5'
+ts = datetime.datetime.now()
 #best model callback
 checkpoint = tf.keras.callbacks.ModelCheckpoint(fname,save_best_only=True)
-history = model.fit(train_x,train_y,validation_data=(val_x,val_y),batch_size= 32 , epochs = epoch_num,callbacks = [checkpoint])
+history = model.fit(train_x,train_y,validation_data=(val_x,val_y),batch_size= 32 , epochs = epoch_num,callbacks = [checkpoint],verbose = 0)
 #save model
+te = datetime.datetime.now()
+td = te-ts
 
-fname = './10{}datapoints_noise_{}_cutoff_{}'.format(power,sigma,cutoff)+'_date'+time_string+'.h5'
+fname = './Saved_Optimised_Networks/10{}datapoints_noise_{}_cutoff_{}'.format(power,sigma,cutoff)+'_date'+time_string+'.h5'
 model.save(fname)
-
+hrs = td.seconds//3600
+mins = (td.seconds//60)%60
+sec = (td.seconds%60)%60
+print('Training Time {}:{}:{}'.format(hrs,mins,sec))
 mape = history.history['val_loss']
 print('Best Network Mape with {} points and noise $\sigma = {}$: {}'.format(points,sigma,np.min(mape)))
 
