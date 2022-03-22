@@ -1,6 +1,6 @@
 import sys
 sys.path.append('/home/sean/Documents/Work/Level 4/Level-4-Masters-Project/')
-
+import random
 import tensorflow as tf 
 from tensorflow import keras
 from tensorflow.keras import layers 
@@ -104,8 +104,8 @@ def neg_grad_tester(val_array, array):
 #Makes the data noisy inside the bounds of the co-ordinates
 def apply_noise(xs,noise_level):
     xs = xs+np.random.normal(size = xs.shape, scale= noise_level)
-    xs[np.where(xs>1)] = 1
-    xs[np.where(xs<0)] = 0
+    xs[np.where(xs>1)] = 2-xs[np.where(xs>1)]
+    xs[np.where(xs<0)] = abs(xs[np.where(xs<0)])
     return xs
 
 ##Generates pion 16 fields on interval 0-1 raised to the 1/4 
@@ -170,14 +170,14 @@ class noisy():
         output = np.vstack((data,new_points_to_append))
         return output[:no_points]
     
-    def data(self,number_predictions,cutoff = 0, keep_dim = True): #Define sigma globally 
+    def data(self,number_predictions,power= 0.25,cutoff = 0, keep_dim = True): #Define sigma globally 
         N = 3
         F0 = 1
         #Get Generator Matricies 
         gens = cL.gen_gellman(3)
         #Generate Fields
-        pi=np.random.rand(number_predictions,N*N-1)**0.25
-        dpi=np.random.rand(number_predictions,N*N-1)**0.25
+        pi=np.random.rand(number_predictions,N*N-1)**power
+        dpi=np.random.rand(number_predictions,N*N-1)**power
         #Calculate V
         orig_V = abs(cL.get_V(pi,dpi,gens,F0).real)
         #Make the xvals noisey
@@ -188,4 +188,80 @@ class noisy():
             output =  self.keep_dims_with_cut(output,cutoff)
         return output
 
+
+
+
+
+### Daniels Transformation and preparation stuff
+def matprint(mat, fmt="g"):
+    col_maxes = [max([len(("{:"+fmt+"}").format(x)) for x in col]) for col in mat.T]
+    for x in mat:
+        for i, y in enumerate(x):
+            print(("{:"+str(col_maxes[i])+fmt+"}").format(y), end="  ")
+        print("")
+
+
+def adjointSUN(dim,liststruc):
+    dimSUN=dim**2-1
+#     admat = np.zeros((8,8,8))
+    admat = np.zeros((dimSUN,dimSUN,dimSUN))
+    for i in range(liststruc.shape[0]):
+        strucc = liststruc[i]
+        strucc1 = int(strucc[0])-1
+        strucc2 = int(strucc[1])-1
+        strucc3 = int(strucc[2])-1
+        admat[strucc1,strucc2,strucc3]=strucc[3]
+        admat[strucc1,strucc3,strucc2]=-strucc[3]
+        admat[strucc3,strucc1,strucc2]=strucc[3]
+        admat[strucc3,strucc2,strucc1]=-strucc[3]
+        admat[strucc2,strucc3,strucc1]=strucc[3]
+        admat[strucc2,strucc1,strucc3]=-strucc[3]
+    return admat
+
+
+# To do, make these work when not supplying stacks of epsilon and transformations.
+
+def get_SO_trans(eps,N):
+    ''' Produces 'infinitesimal' transformation matrices for SO(N) given epsilon.
+        Epsilon is size of transformation and should be a numpy array of dimension 1.
+        N must be larger than 1.
+    '''
+    
+    trans_number = len(eps) 
+    # Generate rotation matrices
+    SO_samp = np.zeros((trans_number,N,N))
+
+    # Set random off diagonal element of each matrix to one (surely must be a better way to do this)
+    poss_inds = range(N)
+    SO_inds = [random.sample(poss_inds,2) for i in range(trans_number)]
+    SO_indsflat = [i*(N)**2+x*(N)+y for i,(x,y) in enumerate(SO_inds)]
+    SO_samp.flat[SO_indsflat] += 1
+
+    # Is this transpose faster than repeating assignment above?
+    SO_samp = SO_samp - np.transpose(SO_samp,axes=[0,2,1])
+    SO_trans = np.identity(N) + eps[:,None,None]*SO_samp
+    # Normalise so that det = 1
+    #norm = np.power(np.linalg.det(SO_trans),-1/(N))
+    #SO_trans = norm[:,None,None]*SO_trans
+    return SO_trans
+  
+def get_SU_trans(eps,N,liststruct,number_predictions):
+    ''' Produces 'infinitesimal' transformation matrices for SO(N) given epsilon.
+        Epsilon is size of transformation and should be a numpy array of dimension 1.
+        N must be larger than 1.
+        Calls adjointSUN which requires liststruct
+    '''
+    adjointSU = adjointSUN(N,liststruct)
+    
+    genno=np.random.randint(0,N*N-2,number_predictions)
+    SU_trans = np.identity(N*N-1)+eps[:,None,None]*adjointSU[genno]
+    # Normalise so that det = 1
+    #norm = np.power(np.linalg.det(SU_trans),-1/(N*N-1))
+    #SU_trans = norm[:,None,None]*SU_trans
+    return SU_trans
+    
+def apply_trans(trans,vec):
+    ''' Apply transformation trans to vector. Assumes both trans and vec are stacks.'''
+    trans_vec=np.matmul(trans,vec[:,:,None]).squeeze()
+    return trans_vec
     

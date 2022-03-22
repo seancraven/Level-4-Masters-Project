@@ -16,8 +16,9 @@ time = datetime.datetime.now()
 time_string = time.strftime('%d_%m_%y')
 
 points =10**7
-sigma = 0.03
+sigma = 0.1
 cutoff = 0.1
+print('Training netowork on: {} Points, {} Sigma, {} Cutoff'.format(points,sigma,cutoff))
 #Gen Data
 data = cf.noisy(sigma).data(points,cutoff = cutoff)
 #Split to input output 
